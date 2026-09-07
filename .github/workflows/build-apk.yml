@@ -1,0 +1,116 @@
+name: Build Raja Cheat APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Prepare Android project
+        run: |
+          mkdir -p app/src/main/java/com/rajacheat/app
+          mkdir -p app/src/main/assets
+          mkdir -p app/src/main/res/values
+
+          if [ -f MainActivity.java ]; then
+            mv MainActivity.java app/src/main/java/com/rajacheat/app/
+          fi
+
+          if [ -f AndroidManifest.xml ]; then
+            mv AndroidManifest.xml app/src/main/
+          fi
+
+          if [ -f index.html ]; then
+            mv index.html app/src/main/assets/
+          fi
+
+          if [ -f strings.xml ]; then
+            mv strings.xml app/src/main/res/values/
+          fi
+
+          if [ -f themes.xml ]; then
+            mv themes.xml app/src/main/res/values/
+          fi
+
+          cat > app/build.gradle <<'EOF'
+          plugins {
+              id 'com.android.application'
+          }
+
+          configurations.configureEach {
+              resolutionStrategy {
+                  force 'org.jetbrains.kotlin:kotlin-stdlib:1.8.22'
+                  force 'org.jetbrains.kotlin:kotlin-stdlib-common:1.8.22'
+              }
+
+              exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk7'
+              exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk8'
+          }
+
+          android {
+              namespace 'com.rajacheat.app'
+              compileSdk 35
+
+              defaultConfig {
+                  applicationId "com.rajacheat.app"
+                  minSdk 23
+                  targetSdk 35
+                  versionCode 1
+                  versionName "1.0"
+              }
+          }
+          EOF
+
+          cat > settings.gradle <<'EOF'
+          pluginManagement {
+              repositories {
+                  google()
+                  mavenCentral()
+                  gradlePluginPortal()
+              }
+          }
+
+          dependencyResolutionManagement {
+              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
+
+          rootProject.name = "Raja-cheat"
+          include ':app'
+          EOF
+
+      - name: Create Gradle wrapper
+        run: |
+          gradle wrapper --gradle-version 8.7
+          chmod +x gradlew
+
+      - name: Build APK
+        run: |
+          ./gradlew clean
+          ./gradlew assembleDebug --stacktrace
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Raja-Cheat-APK
+          path: app/build/outputs/apk/debug/*.apk
