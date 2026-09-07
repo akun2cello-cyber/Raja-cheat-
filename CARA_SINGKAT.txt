@@ -1,0 +1,7 @@
+1. Upload SEMUA isi folder ini ke repository GitHub.
+2. Buka Actions.
+3. Pilih 'Build Raja Cheat APK'.
+4. Tekan 'Run workflow'.
+5. Setelah selesai, download Artifact 'RajaCheat-Android12'.
+6. Extract artifact dan install app-debug.apk di HP Android 12+.
+Tidak perlu Android IDE dan tidak perlu PC.
